@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>MASQUE 节点优选</title>
+  <link rel="stylesheet" href="/style.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">M</span><div><h1>MASQUE 节点优选</h1><p>FOFA 导入 · WARP 隧道实测 · 本地浏览器控制台</p></div></div>
+    <span class="local-badge">本地控制台</span>
+  </header>
+  <main>
+    <div id="global-error" class="notice error" role="alert" hidden></div>
+    <div id="global-message" class="notice success" role="status" hidden></div>
+    <section class="intro"><div><span class="eyebrow">ENDPOINT EXPLORER</span><h2>找到真正可用的出口</h2><p>按地区筛选候选节点，先测延迟，再测下载。默认逐个测试，达成目标即停止。</p></div><a class="help-link" href="#measurement-help">测量说明 ↓</a></section>
+    <div class="workspace">
+      <div class="configuration">
+        <section class="card" aria-labelledby="import-heading">
+          <div class="section-heading"><span class="step">01</span><div><h2 id="import-heading">导入候选节点</h2><p>支持 FOFA JSON、CSV 和 IP:端口文本</p></div><span id="import-count" class="count-badge">0 个节点</span></div>
+          <fieldset id="import-controls"><legend class="sr-only">导入候选节点</legend>
+            <label class="file-zone" for="endpoint-file"><strong>选择节点文件</strong><span>JSON / CSV / TXT，文件仅发送至本地服务</span><input id="endpoint-file" type="file" accept=".json,.csv,.txt,text/plain,text/csv,application/json"></label>
+            <label for="endpoint-text">或粘贴导出内容</label><textarea id="endpoint-text" rows="4" placeholder="粘贴 FOFA 导出的 JSON、CSV 或 IP:端口列表" spellcheck="false"></textarea>
+            <div class="inline-actions"><button id="import-text" type="button" class="button secondary">导入粘贴内容</button><span id="import-status" class="muted" role="status">尚未导入节点</span></div>
+          </fieldset>
+          <div id="import-warnings" class="notice warning" hidden><strong>导入提示</strong><ul id="warning-list"></ul></div>
+        </section>
+        <section class="card" aria-labelledby="credentials-heading">
+          <div class="section-heading"><span class="step">02</span><div><h2 id="credentials-heading">WARP 凭据</h2><p>使用已注册 WARP 的 MASQUE / usque 凭据，而非 WireGuard 密钥</p></div></div>
+          <fieldset id="credential-controls"><legend class="sr-only">WARP 凭据</legend>
+            <div class="inline-actions credential-actions"><label class="button secondary file-button" for="config-file">从 usque config.json 填入<input id="config-file" type="file" accept=".json,application/json"></label><span class="muted">仅在浏览器中读取</span></div>
+            <div class="label-row"><label for="private-key">private_key <span class="required">必填</span></label><button type="button" id="toggle-private-key" class="text-button" aria-pressed="false" aria-controls="private-key">显示私钥</button></div>
+            <textarea id="private-key" class="secret-input" rows="2" autocomplete="off" autocapitalize="none" spellcheck="false" aria-describedby="credential-note"></textarea>
+            <label for="endpoint-pub-key">endpoint_pub_key <span class="required">必填</span></label><textarea id="endpoint-pub-key" rows="2" autocomplete="off" autocapitalize="none" spellcheck="false"></textarea>
+            <div class="field-grid"><div><label for="ipv4">隧道 IPv4</label><input id="ipv4" type="text" value="172.16.0.2" autocomplete="off" spellcheck="false"></div><div><label for="ipv6">隧道 IPv6 <span class="muted">可选</span></label><input id="ipv6" type="text" autocomplete="off" spellcheck="false" placeholder="留空则不使用 IPv6"></div></div>
+            <p id="credential-note" class="field-note">凭据不会自动持久化，也不会写入浏览器存储。启动测试时发送给本地服务；仅点击“保存到本机”才会保存凭据文件。</p>
+            <div class="inline-actions"><button id="save-credentials" class="button secondary" type="button">保存到本机</button><button id="load-credentials" class="button subtle" type="button">读取已保存凭据</button><button id="delete-credentials" class="button danger-text" type="button">删除已保存凭据</button></div>
+          </fieldset>
+        </section>
+        <section class="card" aria-labelledby="settings-heading">
+          <div class="section-heading"><span class="step">03</span><div><h2 id="settings-heading">测试与筛选</h2><p>延迟不达标的节点不会继续下载测速</p></div></div>
+          <fieldset id="settings-controls"><legend class="sr-only">测试参数</legend>
+            <div class="field-grid"><div><label for="transport">外层传输协议</label><select id="transport"><option value="both">TCP + UDP（任一达标即可）</option><option value="tcp">TCP / HTTP/2</option><option value="udp">UDP / QUIC</option></select></div><div><label for="sni">SNI</label><input id="sni" type="text" value="masque.cloudflareclient.com" autocomplete="off" spellcheck="false"></div></div>
+            <div class="field-grid three"><div><label for="max-latency">延迟上限 <span class="unit">ms</span></label><input id="max-latency" type="number" min="0.01" step="any" value="500" required></div><div><label for="min-speed">下载速度下限 <span class="unit">Mbps</span></label><input id="min-speed" type="number" min="0" step="any" value="10" required></div><div><label for="download-bytes">单次下载量 <span class="unit">bytes</span></label><input id="download-bytes" type="number" min="1" step="1" value="10000000" required></div><div><label for="timeout">超时 <span class="unit">秒</span></label><input id="timeout" type="number" min="1" step="1" value="20" required></div><div><label for="samples">采样次数</label><input id="samples" type="number" min="1" step="1" value="3" required></div></div>
+            <div class="divider"></div>
+            <div class="field-grid"><div><label for="region-level">地区维度</label><select id="region-level"><option value="country">国家 / 地区</option><option value="region">省 / 州</option><option value="city">城市</option></select></div><div><label for="quota-mode">达标目标模式</label><select id="quota-mode"><option value="total">所选地区合计</option><option value="per_region">每个所选地区分别达到</option></select></div></div>
+            <div class="region-header"><label class="checkbox-label" for="select-all-regions"><input id="select-all-regions" type="checkbox" disabled>全选地区</label><span id="region-selection-summary" class="muted">请先导入节点</span></div>
+            <div id="region-options" class="region-options" role="group" aria-label="选择需要测试的地区"><p class="empty-hint">导入后将在这里显示地区及节点数量。</p></div>
+            <p id="region-error" class="field-error" role="status" hidden>请至少选择一个地区；未选地区不会参与测试。</p>
+            <div class="target-row"><div><label for="target-count">达标节点目标数</label><input id="target-count" type="number" min="1" step="1" value="10" required></div><p id="quota-description" class="field-note">所选地区合计找到 10 个达标节点后停止。</p></div>
+          </fieldset>
+        </section>
+      </div>
+      <aside class="monitor" aria-labelledby="monitor-heading">
+        <section class="card monitor-card">
+          <div class="section-heading"><div><span class="eyebrow">LIVE SESSION</span><h2 id="monitor-heading">运行概览</h2></div><span id="run-status" class="status-badge">连接中</span></div>
+          <div class="stats"><div><span>已测试 / 总数</span><strong><span id="tested-count">0</span><small> / <span id="total-count">0</span></small></strong></div><div><span>达标节点</span><strong id="qualified-count" class="accent-text">0</strong></div></div>
+          <progress id="run-progress" max="1" value="0" aria-label="测试进度"></progress>
+          <p id="run-description" class="run-description" role="status" aria-live="polite">正在连接本地服务…</p>
+          <div class="current-endpoint"><span>当前节点</span><code id="current-endpoint">—</code></div>
+          <div class="run-actions"><button id="start-run" type="button" class="button primary" disabled>开始优选</button><button id="stop-run" type="button" class="button stop" disabled>停止</button></div>
+          <p id="start-hint" class="field-note">先导入节点、填写凭据并选择地区。</p>
+          <div id="quota-progress-wrap" class="quota-progress-wrap" hidden><h3>地区达标进度</h3><div id="quota-progress"></div></div>
+        </section>
+        <section class="card help-card" id="measurement-help"><h2>如何理解结果</h2><dl><dt>延迟 = TTFB</dt><dd>经隧道发起请求到收到首字节的时间，并非 ICMP Ping。</dd><dt>速度 = Mbps</dt><dd>每秒兆比特，约 8 Mbps = 1 MB/s。只有延迟达标才会继续下载测速。</dd><dt>TCP 与 UDP</dt><dd>指隧道外层传输：TCP 使用 HTTP/2，UDP 使用 QUIC。“TCP + UDP”模式下任一传输达标，该节点即计为达标；同一节点只计一次。</dd><dt>目标与结束</dt><dd>默认串行测试。达到总目标或所有地区目标即停止；候选耗尽与手动停止会明确标记，不代表已达到目标。</dd></dl></section>
+      </aside>
+    </div>
+    <section class="card results-card" aria-labelledby="results-heading">
+      <div class="section-heading"><div><h2 id="results-heading">节点测试结果</h2><p>逐节点追加结果，保留各传输协议的测量与错误信息</p></div><button id="export-results" class="button secondary" type="button" disabled>导出达标 CSV</button></div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="节点测试结果表，可横向滚动"><table><thead><tr><th scope="col">节点 / 地区</th><th scope="col">外层传输</th><th scope="col">TTFB 延迟</th><th scope="col">下载速度</th><th scope="col">状态 / 错误</th></tr></thead><tbody id="result-rows"></tbody></table></div>
+      <div id="results-empty" class="results-empty">还没有测试结果。导入候选节点后，开始一次优选。</div>
+    </section>
+    <footer>凭据与节点仅提交到当前本地服务。请勿分享带会话令牌的启动链接。</footer>
+  </main>
+</body>
+</html>

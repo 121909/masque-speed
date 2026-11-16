@@ -1,0 +1,11 @@
+.tools/
+config.json
+results*.json
+__pycache__/
+*.pyc
+/dist/
+credentials.json
+*.exe
+/masque-speed
+/masque-speed-linux-amd64
+*.zip
